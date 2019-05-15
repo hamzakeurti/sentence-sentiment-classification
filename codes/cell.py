@@ -37,7 +37,8 @@ class RNNCell(nn.Module):
 
     def forward(self, input, h):
         # TODO: your codes here
-        pass
+        new_h = nn.functional.tanh(input * self.w_ih + self.b_ih + h*self.w_hh + self.b_hh)
+        return new_h
 
 
 class GRUCell(nn.Module):
@@ -91,7 +92,11 @@ class GRUCell(nn.Module):
 
     def forward(self, input, h):
         # TODO: your codes here
-        pass
+        r = nn.functional.sigmoid(input * self.w_ir + self.b_ir + h*self.w_hr +self.b_hr)
+        z = nn.functional.sigmoid(input * self.w_iz+ self.b_iz + h * self.w_hz + self.b_hz) 
+        n = nn.functional.tanh(input*self.w_in + self.b_in + r * (h * self.w_hn + self.b_hn))
+        new_h = (1 - z) * n + z * h
+        return new_h
 
 
 class LSTMCell(nn.Module):
@@ -159,4 +164,12 @@ class LSTMCell(nn.Module):
 
     def forward(self, input, state):
         # TODO: your codes here
-        pass
+        h = state[0]
+        c = state[1]
+        i = nn.functional.sigmoid(input * self.w_ii + self.b_ii + h * self.w_hi + self.b_hi)
+        f = nn.functional.sigmoid(input * self.w_if + self.b_if + h * self.w_hf + self.b_hf)
+        g = nn.functional.tanh(input * self.w_ig + self.b_ig + h * self.w_hg + self.b_hg)
+        o = nn.functional.sigmoid(input * self.w_io + self.b_io + h * self.w_ho + self.b_ho)
+        new_c = f * c + i * g
+        new_h = o * nn.functional.tanh(new_c)
+        return (new_h,new_c)
