@@ -1,0 +1,8 @@
+codes/Untitled.ipynb
+codes/.ipynb_checkpoints/Untitled-checkpoint.ipynb
+.vscode/settings.json
+codes/logs/
+codes/.data/
+codes/.vector_cache/
+codes/__pycache__/
+*.pth
