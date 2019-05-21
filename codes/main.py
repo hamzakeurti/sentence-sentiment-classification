@@ -6,7 +6,7 @@ import numpy as np
 
 from torchtext import data, datasets
 from model import Model
-from utils import LOG_INFO
+from utils import INIT_LOG,LOG_INFO
 import cell
 
 torch.manual_seed(1234)
@@ -22,21 +22,32 @@ parser.add_argument("--display_freq", default=50, type=int, help="Display freque
 parser.add_argument("--lr", default=0.01, type=float, help="Learning rate for optimizer")
 parser.add_argument("--cell_type", default='RNNCell', type=str,
                     choices=['RNNCell', 'GRUCell', 'LSTMCell'], help="Available rnn cells")
+parser.add_argument("--log_file", default='', type=str, help="Log file")
+parser.add_argument("--unknown_words", default='normal', type=str,
+                    choices=['normal', 'none'], help="Treatment of unknown words")
 
 args = parser.parse_args()
 print(args)
+
+INIT_LOG(args.log_file)
 
 TEXT = data.Field()
 LABEL = data.LabelField(dtype=torch.float)
 
 train_data, valid_data, test_data = datasets.SST.splits(TEXT, LABEL)
 
-TEXT.build_vocab(train_data, max_size=args.max_vocab_size,
-                 vectors="glove.6B.300d", unk_init=torch.Tensor.normal_)
+unknown_treatment = args.unknown_words
+
+if unknown_treatment == "none":
+    TEXT.build_vocab(train_data, max_size=args.max_vocab_size,
+                 vectors="glove.6B."+str(args.embedding_dim)+"d", unk_init=None)
+else:
+    TEXT.build_vocab(train_data, max_size=args.max_vocab_size,
+                 vectors="glove.6B."+str(args.embedding_dim)+"d", unk_init=torch.Tensor.normal_)
 
 LABEL.build_vocab(train_data)
 
-device = 'cpu'
+device = 'cuda'
 
 train_iterator, valid_iterator, test_iterator = data.BucketIterator.splits(
     (train_data, valid_data, test_data), batch_size=args.batch_size, device=device
@@ -46,7 +57,7 @@ input_dim = len(TEXT.vocab)
 output_dim = args.n_labels
 
 rnncell = cell.__dict__[args.cell_type]
-model = Model(rnncell, input_dim, args.embedding_dim, args.hidden_dim, output_dim)
+model = Model(rnncell, input_dim, args.embedding_dim, args.hidden_dim, output_dim,device)
 optimizer = optim.Adam(model.parameters(), lr=args.lr)
 criterion = nn.CrossEntropyLoss()
 

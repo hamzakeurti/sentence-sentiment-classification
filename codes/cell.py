@@ -3,6 +3,10 @@ import torch
 import math
 
 
+def expand(tensor1,target_tensor):
+    return tensor1[None,:,None].expand(target_tensor.shape)
+
+
 class RNNCell(nn.Module):
     '''An Elman RNN cell with tanh non-linearity.
 
@@ -37,7 +41,15 @@ class RNNCell(nn.Module):
 
     def forward(self, input, h):
         # TODO: your codes here
-        new_h = nn.functional.tanh(input * self.w_ih + self.b_ih + h*self.w_hh + self.b_hh)
+        # print("input",input.shape)
+        # print("hidden",h.shape)
+        # a1 = torch.mm(input , self.w_ih)
+        # a2 = torch.mm(h,self.w_hh)
+
+        # print("a1",a1.shape)
+        # print("a2",a2.shape)
+        
+        new_h = torch.tanh(torch.mm(input , self.w_ih) + self.b_ih + torch.mm(h,self.w_hh) + self.b_hh)
         return new_h
 
 
@@ -92,9 +104,9 @@ class GRUCell(nn.Module):
 
     def forward(self, input, h):
         # TODO: your codes here
-        r = nn.functional.sigmoid(input * self.w_ir + self.b_ir + h*self.w_hr +self.b_hr)
-        z = nn.functional.sigmoid(input * self.w_iz+ self.b_iz + h * self.w_hz + self.b_hz) 
-        n = nn.functional.tanh(input*self.w_in + self.b_in + r * (h * self.w_hn + self.b_hn))
+        r = torch.sigmoid(torch.mm(input , self.w_ir) + self.b_ir + torch.mm(h , self.w_hr) +self.b_hr)
+        z = torch.sigmoid(torch.mm(input , self.w_iz)+ self.b_iz + torch.mm(h , self.w_hz) + self.b_hz) 
+        n = torch.tanh(torch.mm(input , self.w_in) + self.b_in + r * (torch.mm(h , self.w_hn + self.b_hn)))
         new_h = (1 - z) * n + z * h
         return new_h
 
@@ -166,10 +178,10 @@ class LSTMCell(nn.Module):
         # TODO: your codes here
         h = state[0]
         c = state[1]
-        i = nn.functional.sigmoid(input * self.w_ii + self.b_ii + h * self.w_hi + self.b_hi)
-        f = nn.functional.sigmoid(input * self.w_if + self.b_if + h * self.w_hf + self.b_hf)
-        g = nn.functional.tanh(input * self.w_ig + self.b_ig + h * self.w_hg + self.b_hg)
-        o = nn.functional.sigmoid(input * self.w_io + self.b_io + h * self.w_ho + self.b_ho)
+        i = torch.sigmoid(torch.mm(input , self.w_ii) + self.b_ii + torch.mm(h , self.w_hi) + self.b_hi)
+        f = torch.sigmoid(torch.mm(input , self.w_if) + self.b_if + torch.mm(h , self.w_hf) + self.b_hf)
+        g = torch.tanh(torch.mm(input , self.w_ig) + self.b_ig + torch.mm(h , self.w_hg) + self.b_hg)
+        o = torch.sigmoid(torch.mm(input , self.w_io) + self.b_io + torch.mm(h , self.w_ho) + self.b_ho)
         new_c = f * c + i * g
-        new_h = o * nn.functional.tanh(new_c)
+        new_h = o * torch.tanh(new_c)
         return (new_h,new_c)
